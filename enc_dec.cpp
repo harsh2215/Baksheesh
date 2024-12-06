@@ -2,6 +2,7 @@
 using namespace std;
 
 vector<unsigned char> key = {0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0, 0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0, 0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0, 0x0,0x0,};
+// vector<unsigned char> key = {0xb,0x4,0xc,0x3,0xe,0x7,0x5,0x8,0xf,0x1, 0x2,0x0,0x5,0x6,0x4,0x4,0x0,0xb,0xa,0x9, 0x3,0x2,0x1,0x0,0xb,0xe,0xd,0xb,0xa,0x9, 0x1,0x5,};
 
 vector<unsigned char> plaintext = {0x4,0x4,0x4,0x4,0x4,0x4,0x4,0x4,0x4,0x4, 0x4,0x4,0x4,0x4,0x4,0x4,0x4,0x4,0x4,0x4, 0x4,0x4,0x4,0x4,0x4,0x4,0x4,0x4,0x4,0x4, 0x4,0x4,};
 
@@ -33,11 +34,16 @@ void Key_update(vector<unsigned char> &key)
         buf[i] = tmp[i+1];
     }
     buf[127] = tmp[0];
-
+    for(int i = 0; i < 128; i++){
+        // cout << (int)buf[i];
+    }
+    // cout << endl;
     // convert bit-wise variables into nibble-wise variables
     for(int i = 0; i < 32; i++){
         key[i] = buf[(4 * i)] ^ (buf[(4 * i) + 1] << 1) ^ (buf[(4 * i) + 2] << 2) ^ (buf[(4 * i) + 3] << 3);
     }
+
+
 }
 
 
@@ -47,7 +53,13 @@ void encryption(vector<unsigned char> & p, vector<unsigned char> &key)
     // whitening the key
     for(int i = 0; i < 32; i++){
         p[i] ^= key[i];
+        // cout << hex << p[i] << " " ;
     }
+    
+    // for(int i=0; i < 32; i++)
+    // {
+    //     cout << hex << p[i] << " " ;
+    // }
 
     // round function
     for(int r =0; r < 35 ;r++)
@@ -55,19 +67,32 @@ void encryption(vector<unsigned char> & p, vector<unsigned char> &key)
 
         // using Sbox
         for(int i = 0; i < 32; i++){
+            // cout << hex << p[i] << " " ;
+
             p[i] = SBox[p[i]];
+            // cout << hex << p[i] << endl;
+            // cout << hex << p[i] << " " ;
         }
 
         // convert nibble-wise variables into bit-wise variables
         // permutation
         vector<unsigned char> tmp(128);
         vector<unsigned char> buf(128);
-
+    // cout << endl;
         for(int i = 0; i < 32; i++){
             for(int j = 0; j < 4; j++){
+                if(r==0)
+                {
+                    // cout << "index : " << i << " j : " << j << " p[i] : " << hex << (int)p[i] << " p[i] >> j : " << hex << (p[i] >> j) << " (p[i] >> j) & 0x1 : " << hex << ((p[i] >> j) & 0x1) << endl;
+                    // cout << "p[i] : " << hex << (int)p[i] << " j : " << j << " p[i] >> j : " << hex << (p[i] >> j) << " (p[i] >> j) & 0x1 : " << hex << ((p[i] >> j) & 0x1) << endl;
+                    // cout << "temp[" << (i*4)+j << "] = p[" << i <<"] >> " << j << " & 0x1" << " : " << ((p[i]>> j)&0x1) << endl;
+                    // cout << "temp[" << (i * 4) + j << "] : " << hex << ((p[i]>>j)&0x1) << endl;
+                }
+                int x = (i%4) + ((i/16)*4);
                 tmp[(i * 4) + j] = (p[i] >> j) & 0x1;
             }
         }
+
 
         // bit permutation
         for(int i = 0; i < 128; i++){
@@ -95,7 +120,6 @@ void encryption(vector<unsigned char> & p, vector<unsigned char> &key)
         for(int i = 0; i < 32; i++){
             p[i] ^= (key[i] & 0b1101);
         }
-
 
     }
 }
@@ -176,30 +200,30 @@ void decryption(vector<unsigned char> &c , vector<unsigned char> &key)
     }
 }
 
-int main() {
-    cout<< "plain text : ";
-    for(int i = 0; i < 32; i++){
-        cout << (int)plaintext[i];
-    }
-    encryption(plaintext, key);
-    cout << endl;
-    cout << "key : ";
-    for(int i = 0; i < 32; i++){
-        cout << hex << (int)key[i];
-    }
-    cout << endl;
-    cout << "cipher text : ";
-    for(int i = 0; i < 32; i++){
-        cout << hex << (int)plaintext[i];
-    }
-    cout << endl;
+// int main() {
+//     cout<< "plain text : ";
+//     for(int i = 0; i < 32; i++){
+//         cout << (int)plaintext[i];
+//     }
+//     encryption(plaintext, key);
+//     cout << endl;
+//     cout << "key : ";
+//     for(int i = 0; i < 32; i++){
+//         cout << hex << (int)key[i];
+//     }
+//     cout << endl;
+//     cout << "cipher text : ";
+//     for(int i = 0; i < 32; i++){
+//         cout << hex << (int)plaintext[i];
+//     }
+//     cout << endl;
 
 
-    decryption(plaintext, key);
-    cout << "decrypted text : ";
-    for(int i = 0; i < 32; i++){
-        cout << (int)plaintext[i];
-    }
+//     decryption(plaintext, key);
+//     cout << "decrypted text : ";
+//     for(int i = 0; i < 32; i++){
+//         cout << (int)plaintext[i];
+//     }
     
-    return 0;
-}
+//     return 0;
+// }
