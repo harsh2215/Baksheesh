@@ -1,9 +1,11 @@
 #include "bits/stdc++.h"
 using namespace std;
 
-vector<unsigned char> key = {0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0, 0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0, 0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0, 0x0,0x0,};
+vector<unsigned char> key = {0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0, 0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0, 0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0, 0x0,0x0 };
 
-vector<unsigned char> plaintext = {0x4,0x4,0x4,0x4,0x4,0x4,0x4,0x4,0x4,0x4, 0x4,0x4,0x4,0x4,0x4,0x4,0x4,0x4,0x4,0x4, 0x4,0x4,0x4,0x4,0x4,0x4,0x4,0x4,0x4,0x4, 0x4,0x4,};
+vector<unsigned char> plaintext = {0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0, 0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0, 0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0, 0x0,0x0 };
+
+// vector<unsigned char> plaintext = {0x4,0x4,0x4,0x4,0x4,0x4,0x4,0x4,0x4,0x4, 0x4,0x4,0x4,0x4,0x4,0x4,0x4,0x4,0x4,0x4, 0x4,0x4,0x4,0x4,0x4,0x4,0x4,0x4,0x4,0x4, 0x4,0x4,};
 
 vector<unsigned char> SBox ={3, 0, 6, 13, 11, 5, 8, 14, 12, 15, 9, 2, 4, 10, 7, 1};
 
@@ -16,6 +18,7 @@ vector<unsigned char> InvPermutation={0, 5, 10, 15, 16, 21, 26, 31, 32, 37, 42, 
 vector<unsigned char> RoundConstant= {2, 33, 16, 9, 36, 19, 40, 53, 26, 13, 38, 51, 56, 61, 62, 31, 14, 7, 34, 49, 24, 45, 54, 59, 28, 47, 22, 43, 20, 11, 4, 3, 32, 17, 8};
 
 vector<unsigned char> TapPositions= {8, 13, 19, 35, 67, 106};
+
 void Key_update(vector<unsigned char> &key)
 {
     // convert nibble-wise variables into bit-wise variables
@@ -40,9 +43,30 @@ void Key_update(vector<unsigned char> &key)
     }
 }
 
+void add_padding(vector<unsigned char> &input, int block_size) {
+    int len = input.size(); // Number of nibbles in input
+    cout << "\ninput length: " << len << endl;
+
+    int padding_size = (block_size - (len % block_size)) % block_size;
+    if (padding_size == 0) {
+        padding_size = block_size; // Add a full block of padding
+    }
+    for (int i = 0; i < padding_size; i++) {
+        input.push_back(padding_size); // Append padding
+    }
+}
+
 
 void encryption(vector<unsigned char> & p, vector<unsigned char> &key)
 {
+
+    add_padding(p , 32);
+    
+    cout << "Plaintext after padding: "; 
+
+    for(int i = 0; i < 32; i++){
+        cout << hex << (int)p[i];
+    }
 
     // whitening the key
     for(int i = 0; i < 32; i++){
@@ -71,7 +95,9 @@ void encryption(vector<unsigned char> & p, vector<unsigned char> &key)
 
         // bit permutation
         for(int i = 0; i < 128; i++){
-            buf[Permutation[i]] = tmp[i];
+            int x = (i % 4) + ((i/16) * 4);
+            int y = (i - ((i/4) % 4)) % 4;
+            buf[(32 * y) + x] = tmp[i];
         }
 
         // add constant
@@ -124,8 +150,17 @@ void Key_update_dec(vector<unsigned char> &key)
     }
 }
 
+void remove_padding(vector<unsigned char> &input) {
+    if (input.empty()) return; // No input to process
+    unsigned char padding_size = input.back(); // Last nibble indicates padding size
+    if (padding_size > input.size()) {
+        throw std::runtime_error("Invalid padding"); // Sanity check for corrupted input
+    }
+    input.resize(input.size() - padding_size); // Remove padding
+}
+
 void decryption(vector<unsigned char> &c , vector<unsigned char> &key)
-{
+{ 
     for(int  i=0; i < 35; i++)
     {
         Key_update(key);
@@ -174,10 +209,19 @@ void decryption(vector<unsigned char> &c , vector<unsigned char> &key)
             c[i] = InvSBox[c[i]];
         }
     }
+
+    remove_padding(c);
+
+    int n = c.size();
+    
+    cout << "plaintext after removing padding / Decrypted Text:";
+    for(int i = 0; i < n; i++){
+        cout << hex << (int)c[i];
+    }
 }
 
 int main() {
-    cout<< "plain text : ";
+    cout << "plain text : ";
     for(int i = 0; i < 32; i++){
         cout << (int)plaintext[i];
     }
@@ -196,10 +240,10 @@ int main() {
 
 
     decryption(plaintext, key);
-    cout << "decrypted text : ";
-    for(int i = 0; i < 32; i++){
-        cout << (int)plaintext[i];
-    }
+    // cout << "\ndecrypted text : ";
+    // for(int i = 0; i < 32; i++){
+    //     cout << (int)plaintext[i];
+    // }
     
     return 0;
 }
